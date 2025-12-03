@@ -20,17 +20,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class VehicleEmissionProcessor:
-    """
-    Processes vehicle emission data and calculates max CO2 values.
-    Per Lab PDF Section 2.1: Calculate max CO2 emission values and return results.
-    """
-    
     def __init__(self):
         self.ipc_client = None
         self.vehicle_data = {}  # Store data per vehicle to calculate max
         
     def connect_ipc(self):
-        """Establish IPC connection to Greengrass Core"""
+        # connect ipc 
         try:
             self.ipc_client = awsiot.greengrasscoreipc.connect()
             logger.info("Successfully connected to Greengrass IPC")
@@ -40,21 +35,11 @@ class VehicleEmissionProcessor:
             return False
     
     def process_emission_data(self, vehicle_id, vehicle_co2):
-        """
-        Process emission data for a vehicle.
-        Per Lab PDF: Calculate maximum CO2 emission values.
-        
-        Args:
-            vehicle_id: The vehicle identifier
-            vehicle_co2: The CO2 emission value
-            
-        Returns:
-            dict: Processing result with max_CO2
-        """
+       # get max C02
         try:
             co2_val = float(vehicle_co2)
             
-            # Track max CO2 per vehicle
+            # track max CO2 per vehicle
             if vehicle_id not in self.vehicle_data:
                 self.vehicle_data[vehicle_id] = {
                     'max_co2': co2_val,
@@ -79,15 +64,7 @@ class VehicleEmissionProcessor:
             return None
     
     def publish_result(self, vehicle_id, result):
-        """
-        Publish processing result back to a vehicle-specific topic.
-        
-        Per Lab PDF Section 2.2: 
-        "Should a device user receive the output for another user?"
-        Answer: NO - Use vehicle-specific topics so each device only gets its own results.
-        
-        Topic format: iot/Vehicle_{vehicle_id}/result
-        """
+       #publish back the max co2
         if not self.ipc_client:
             logger.error("IPC client not connected")
             return False
@@ -116,20 +93,7 @@ class VehicleEmissionProcessor:
             return False
     
     def handle_message(self, topic, payload):
-        """
-        Handle incoming vehicle emission message.
         
-        Expected payload format:
-        {
-            "vehicle_id": "050",
-            "vehicle_CO2": 15.5
-        }
-        OR array of records:
-        [
-            {"vehicle_id": "050", "vehicle_CO2": 15.5},
-            {"vehicle_id": "050", "vehicle_CO2": 16.2}
-        ]
-        """
         try:
             data = json.loads(payload)
             
