@@ -28,14 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 class StreamHandler(client.SubscribeToIoTCoreStreamHandler):
-    """Handler for incoming MQTT messages from IoT Core"""
     
     def __init__(self, processor):
         super().__init__()
         self.processor = processor
     
     def on_stream_event(self, event: IoTCoreMessage) -> None:
-        """Called when a message is received"""
+        # when message is received
         try:
             topic = event.message.topic_name
             payload = event.message.payload.decode('utf-8')
@@ -54,7 +53,6 @@ class StreamHandler(client.SubscribeToIoTCoreStreamHandler):
 
 
 class VehicleEmissionComponent:
-    """Main Greengrass Component for Vehicle Emission Processing"""
     
     def __init__(self, config):
         self.config = config
@@ -63,17 +61,15 @@ class VehicleEmissionComponent:
         self.subscriptions = []
         
     def initialize(self):
-        """Initialize IPC connection and subscriptions"""
         try:
-            # Connect to Greengrass IPC
+            # connect to Greengrass IPC
             self.ipc_client = awsiot.greengrasscoreipc.connect()
             logger.info("Connected to Greengrass IPC")
             
-            # Share IPC client with processor
+            # share IPC client with processor
             self.processor.ipc_client = self.ipc_client
             
-            # Subscribe to vehicle emission topics
-            # Per Lab PDF: Subscribe to topics where vehicle data is published
+            #subscribe to vehicle emission topics
             subscribe_topics = self.config.get('mqtt-subscribe-topics', [])
             
             for topic in subscribe_topics:
@@ -98,7 +94,7 @@ class VehicleEmissionComponent:
             operation = self.ipc_client.new_subscribe_to_iot_core(handler)
             operation.activate(request)
             
-            # Wait for subscription to be established
+            # wait for subscription to be established
             future = operation.get_response()
             future.result(timeout=10)
             
@@ -110,12 +106,11 @@ class VehicleEmissionComponent:
             traceback.print_exc()
     
     def run(self):
-        """Main run loop - keeps component alive"""
         logger.info("Vehicle Emission Component running...")
         
         try:
             while True:
-                # Component stays alive to process incoming messages
+                # component stays alive to process incoming messages
                 time.sleep(1)
                 
         except KeyboardInterrupt:
@@ -127,7 +122,6 @@ class VehicleEmissionComponent:
             self.cleanup()
     
     def cleanup(self):
-        """Clean up resources"""
         logger.info("Cleaning up component...")
         for subscription in self.subscriptions:
             try:
@@ -137,25 +131,24 @@ class VehicleEmissionComponent:
 
 
 def main():
-    """Entry point"""
     try:
-        # Parse configuration from command line
-        # The recipe passes config as JSON string
+        # parse configuration from command line
+        # the recipe passes config as JSON string
         if len(sys.argv) > 1:
             config = json.loads(sys.argv[1])
         else:
-            # Default configuration for testing
+            # default configuration for testing
             config = {
                 'base-pubsub-topic': 'vehicle-emission',
                 'mqtt-subscribe-topics': [
-                    'vehicle/+/emission',     # Wildcard for all vehicles
-                    'iot/emission/#'          # Alternative topic pattern
+                    'vehicle/+/emission',   
+                    'iot/emission/#'        
                 ]
             }
         
         logger.info(f"Component config: {json.dumps(config, indent=2)}")
         
-        # Create and run component
+        # create and run component
         component = VehicleEmissionComponent(config)
         
         if component.initialize():
