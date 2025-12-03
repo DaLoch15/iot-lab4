@@ -1,0 +1,56 @@
+{
+  "RecipeFormatVersion": "2020-01-25",
+  "ComponentName": "com.lab4.VehicleEmissionProcessor",
+  "ComponentVersion": "1.0.0",
+  "ComponentDescription": "Vehicle Emission Processor - Lab 4 Data Inference Component",
+  "ComponentPublisher": "David Loch",
+  "ComponentConfiguration": {
+    "DefaultConfiguration": {
+      "VehicleEmissionConfig": {
+        "base-pubsub-topic": "vehicle-emission",
+        "mqtt-subscribe-topics": [
+          "vehicle/+/emission",
+          "iot/emission/#"
+        ]
+      },
+      "accessControl": {
+        "aws.greengrass.ipc.mqttproxy": {
+          "com.lab4.VehicleEmissionProcessor:mqttproxy:1": {
+            "policyDescription": "Allows publish and subscribe to vehicle topics",
+            "operations": [
+              "aws.greengrass#PublishToIoTCore",
+              "aws.greengrass#SubscribeToIoTCore"
+            ],
+            "resources": [
+              "vehicle/*",
+              "iot/*"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "Manifests": [
+    {
+      "Name": "Linux",
+      "Platform": {
+        "os": "linux"
+      },
+      "Artifacts": [
+        {
+          "URI": "s3://greengrass-components-lab4/com.lab4.VehicleEmissionProcessor/1.0.0/src.zip",
+          "Unarchive": "ZIP"
+        }
+      ],
+      "Lifecycle": {
+        "Install": {
+          "Timeout": 300,
+          "Script": "echo 'Installing Vehicle Emission Processor'"
+        },
+        "Run": {
+          "Script": "python3 -u {artifacts:decompressedPath}/src/main.py '{configuration:/VehicleEmissionConfig}'"
+        }
+      }
+    }
+  ]
+}

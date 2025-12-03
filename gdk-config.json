@@ -1,0 +1,19 @@
+{
+  "component": {
+    "com.lab4.VehicleEmissionProcessor": {
+      "author": "David Loch",
+      "version": "1.0.0",
+      "build": {
+        "build_system": "zip",
+	"options": {
+	  "zip_name": "src.zip"
+	}
+      },
+      "publish": {
+        "bucket": "greengrass-components-lab4",
+        "region": "us-east-2"
+      }
+    }
+  },
+  "gdk_version": "1.0.0"
+}
