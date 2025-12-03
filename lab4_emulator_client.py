@@ -6,25 +6,16 @@ import pandas as pd
 import numpy as np
 
 
-# ============================================================================
-# CONFIGURATION - Update these paths to match your setup
-# ============================================================================
 
-# Vehicle IDs (matches your file names: vehicle51.csv to vehicle55.csv)
 device_st = 51
 device_end = 56  # 51, 52, 53, 54, 55
 
-# Path to the dataset
 data_path = "data/vehicle{}.csv"
 
-# Path to your certificates
 certificate_formatter = "certificates/certs/Vehicle{:03d}-cert.pem"
 key_formatter = "certificates/certs/Vehicle{:03d}-private.key"
 
-# AWS IoT Endpoint
 IOT_ENDPOINT = "a2726xers4vyvl-ats.iot.us-east-2.amazonaws.com"
-
-# ============================================================================
 
 
 class MQTTClient:
@@ -33,7 +24,6 @@ class MQTTClient:
         self.state = 0
         self.client = AWSIoTMQTTClient(f"Vehicle{device_id}")
         
-        # Configure endpoint
         self.client.configureEndpoint(IOT_ENDPOINT, 8883)
         self.client.configureCredentials("./keys/AmazonRootCA1.pem", key, cert)
         self.client.configureOfflinePublishQueueing(-1)
@@ -44,10 +34,7 @@ class MQTTClient:
         
 
     def customOnMessage(self, message):
-        """
-        Callback when a message is received.
-        Receives processed results from the Greengrass component.
-        """
+         # creates easier readability
         print("\n" + "="*60)
         print("📥 RECEIVED RESULT FROM GREENGRASS:")
         print(f"   Device: Vehicle{self.device_id}")
@@ -71,12 +58,7 @@ class MQTTClient:
 
 
     def publish_emission(self, max_rows=10):
-        """
-        Publish vehicle emission data row by row.
-        
-        Publishes to: vehicle/{vehicle_id}/emission
-        Payload: {"vehicle_id": "51", "vehicle_CO2": 2416.04}
-        """
+        # publish emission data by vehicle
         topic = f"vehicle/{self.device_id}/emission"
         
         try:
@@ -86,7 +68,7 @@ class MQTTClient:
             print(f"\n📤 Vehicle{self.device_id} publishing {rows_to_send} readings to {topic}")
             
             for index, row in df.head(rows_to_send).iterrows():
-                # Create payload with vehicle_id and vehicle_CO2
+                # create payload with vehicle_id and vehicle_CO2
                 payload_dict = {
                     "vehicle_id": self.device_id,
                     "vehicle_CO2": float(row['vehicle_CO2'])
@@ -108,10 +90,7 @@ class MQTTClient:
 
 
     def publish_batch(self, max_rows=20):
-        """
-        Publish all emission data as a single batch message.
-        The component will calculate max across all readings.
-        """
+    
         topic = f"vehicle/{self.device_id}/emission"
         
         try:
@@ -120,7 +99,7 @@ class MQTTClient:
             
             print(f"\n📤 Vehicle{self.device_id} publishing batch of {rows_to_send} readings")
             
-            # Create array of records
+            # create array of records
             records = []
             for index, row in df.head(rows_to_send).iterrows():
                 record = {
@@ -141,30 +120,19 @@ class MQTTClient:
 
 
     def subscribe_to_results(self):
-        """
-        Subscribe to receive processed results from Greengrass.
-        
-        Per Lab PDF Section 2.2: Each vehicle gets its own result topic
-        so it only receives its own data.
-        
-        Subscribes to: iot/Vehicle_{vehicle_id}/result
-        """
+        # receive data back from greengrass
         result_topic = f"iot/Vehicle_{self.device_id}/result"
         
         print(f"   Vehicle{self.device_id} subscribing to: {result_topic}")
         self.client.subscribeAsync(result_topic, 1, ackCallback=self.customSubackCallback)
 
 
-# ============================================================================
-# Main Program
-# ============================================================================
-
 print("="*60)
 print("  Lab 4 - Vehicle Emission Data Simulator")
 print("  Sends CO2 data to Greengrass for processing")
 print("="*60)
 
-# Check for vehicle data files
+# check for vehicle data files
 print("\n📁 Checking for vehicle data files...")
 available_vehicles = []
 for i in range(device_st, device_end):
@@ -182,7 +150,7 @@ if not available_vehicles:
 
 print(f"\n   Found {len(available_vehicles)} vehicle data files")
 
-# Connect MQTT clients
+# connect MQTT clients
 print("\n🔌 Connecting to AWS IoT...")
 print(f"   Endpoint: {IOT_ENDPOINT}")
 
